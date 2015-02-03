@@ -1,51 +1,98 @@
 #include <Wire.h>
 #include "SwitchSlave.h"
 
+HardwareSerial *port;
+
 int NEXT_FREE_ADDR = 2;
-int SWITCH_ADDR = NULL;
-int SERVO_ADDR = NULL;
 SwitchSlave switchSlaves[99];
-int switchCount = 0;
+int slaveCount = 0;
+
+// COMMANDS
+const int REGISTER_SLAVE = 0;
+const int CHECK_FOR_COMMANDS = 1;
 
 void setup()
-{
-  Serial.begin(9600);
-  Wire.begin(1); // join i2c bus (address optional for master)
+{ 
+  
+  // Initialise the serial ports
+  port = &Serial1;
+  port->begin(9600);
+
+  Serial.begin(4800); // debug serial
+
+  // Initialise i2c mechanism
+  Wire.begin(1);
   Wire.onRequest(requestEvent);
   Wire.onReceive(receiveEvent);
 }
 
-byte x = 0;
-
 void loop()
-{
+{  
+  // if (slaveCount != 0) {
+  //   switchSlaves[slaveCount-1].toggle();
+  //   writeToServer(switchSlaves[slaveCount-1].m_address, switchSlaves[slaveCount-1].m_currentState);
+  // }
   
-  Serial.print("Switch Slaves count: ");
-  Serial.println(switchCount);
-
-  if (switchCount != 0) {
-    switchSlaves[switchCount-1].toggle();
-  }
+  // if (SERVO_ADDR != NULL) {
+  //   int r = rand() % 180;
+  //    writeServo(r); 
+  // }
   
-  if (SERVO_ADDR != NULL) {
-    int r = rand() % 180;
-     writeServo(r); 
-  }
-  delay(500);
+  requestCommandsFromServer();
+  delay(1000);
 }
 
-int toggleSwitchSlave(SwitchSlave ss) {
-  Wire.requestFrom(ss.m_address,1);
-  while(Wire.available()) {
-    Serial.println(Wire.read());
+void requestCommandsFromServer() {
+  sendCommandToServer(CHECK_FOR_COMMANDS, NULL, NULL);
+  // receive commands from server
+  while (port->available()){
+    char buffer[6];
+    int i = 0;
+    while (port->available() && i < 6) {
+      char inByte = port->read();
+      buffer[i] = inByte;
+      i++;
+    }
+
+    char addrStr[3];
+    addrStr[0] = buffer[0];
+    addrStr[1] = buffer[1];
+    addrStr[2] = '\0';
+
+    char valStr[3];
+    valStr[0] = buffer[2];
+    valStr[1] = buffer[3];
+    valStr[2] = '\0';
+
+    char typeStr[3];
+    typeStr[0] = buffer[4];
+    typeStr[1] = buffer[5];
+    typeStr[2] = '\0';
+
+    int addr = atoi(addrStr);
+    int val = atoi(valStr);
+    int type = atoi(typeStr);
+    executeSlaveCommand(type, addr, val);
+    delay(100);
   }
 }
 
-int writeServo(int angle) {
-  Wire.beginTransmission(SERVO_ADDR);
-  Wire.write(angle);
-  Wire.endTransmission();
+void executeSlaveCommand(int type, int addr, int val) {
+  switch (type) {
+    case 0:
+      switchSlaves[addr].execute(val);
+      break;
+    default:
+      break;
+  }
+  // notify server that command is completed
 }
+
+// int writeServo(int angle) {
+//   Wire.beginTransmission(SERVO_ADDR);
+//   Wire.write(angle);
+//   Wire.endTransmission();
+// }
 
 void requestEvent() { 
  Wire.write(NEXT_FREE_ADDR);
@@ -82,24 +129,34 @@ void receiveEvent(int howMany)
   int addr = atoi(addrStr);
   int type = atoi(typeStr);
 
-  doCommand(command, addr, type);
-
+  doReceiveEventCommand(command, addr, type);
 }
 
-void doCommand(int command, int addr, int type) {
+void doReceiveEventCommand(int command, int addr, int type) {
   switch (command) {
     case 0:
       // Register Slave
       if (type == 0) {
-        switchSlaves[switchCount] = SwitchSlave(addr);
-        switchCount++;
+        switchSlaves[addr] = SwitchSlave(addr);
+        slaveCount++;
+        // Register the slave with the server
+        sendCommandToServer(REGISTER_SLAVE, addr, type);
       }
       break;
     case 1:
       // do something
       break;
     default:
-      // do something
-      Serial.println("INVALID COMMAND");
+      // invalid command
+      break;
   }
+}
+
+void sendCommandToServer(int command, int address, int value) {
+  port->print(command);
+  port->print('\t');
+  port->print(address);
+  port->print('\t');
+  port->print(value);
+  port->println();
 }
