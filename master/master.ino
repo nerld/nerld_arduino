@@ -1,15 +1,19 @@
 #include <Wire.h>
 #include "SwitchSlave.h"
+#include "ServoSlave.h"
+#include "TMP36Slave.h"
 
 HardwareSerial *port;
 
 int NEXT_FREE_ADDR = 2;
 SwitchSlave switchSlaves[99];
+TMP36Slave tmp36Slaves[99];
 int slaveCount = 0;
 
 // COMMANDS
 const int REGISTER_SLAVE = 0;
 const int CHECK_FOR_COMMANDS = 1;
+const int SEND_VALUE = 2;
 
 void setup()
 { 
@@ -20,6 +24,8 @@ void setup()
 
   Serial.begin(4800); // debug serial
 
+  Serial.println('Serial ports are up!');
+
   // Initialise i2c mechanism
   Wire.begin(1);
   Wire.onRequest(requestEvent);
@@ -27,17 +33,7 @@ void setup()
 }
 
 void loop()
-{  
-  // if (slaveCount != 0) {
-  //   switchSlaves[slaveCount-1].toggle();
-  //   writeToServer(switchSlaves[slaveCount-1].m_address, switchSlaves[slaveCount-1].m_currentState);
-  // }
-  
-  // if (SERVO_ADDR != NULL) {
-  //   int r = rand() % 180;
-  //    writeServo(r); 
-  // }
-  
+{    
   requestCommandsFromServer();
   delay(1000);
 }
@@ -101,9 +97,9 @@ void requestEvent() {
 
 void receiveEvent(int howMany)
 { 
-  char buffer[6];
+  char buffer[11];
   int i = 0;
-  while(Wire.available() && i < 6)
+  while(Wire.available() && i < 11)
   {
     char c = Wire.read();
     buffer[i] = c;
@@ -129,22 +125,36 @@ void receiveEvent(int howMany)
   int addr = atoi(addrStr);
   int type = atoi(typeStr);
 
-  doReceiveEventCommand(command, addr, type);
+  doReceiveEventCommand(command, addr, type, buffer);
 }
 
-void doReceiveEventCommand(int command, int addr, int type) {
+void doReceiveEventCommand(int command, int addr, int type, char* buffer) {
+  Serial.println("doReceiveEventCommand called.");
   switch (command) {
     case 0:
       // Register Slave
+      Serial.println("doReceiveEventCommand::RegisterSlave called.");
       if (type == 0) {
         switchSlaves[addr] = SwitchSlave(addr);
+        slaveCount++;
+        // Register the slave with the server
+        sendCommandToServer(REGISTER_SLAVE, addr, type);
+      } else if (type == 3) {
+        tmp36Slaves[addr] = TMP36Slave(addr);
         slaveCount++;
         // Register the slave with the server
         sendCommandToServer(REGISTER_SLAVE, addr, type);
       }
       break;
     case 1:
-      // do something
+      // Send float to server
+      char tempFloatChar[5];
+      tempFloatChar[0] = buffer[4];
+      tempFloatChar[1] = buffer[5];
+      tempFloatChar[2] = buffer[6];
+      tempFloatChar[3] = buffer[7];
+      tempFloatChar[4] = '\0';
+      sendCommandToServer(SEND_VALUE, addr, atoi(tempFloatChar));
       break;
     default:
       // invalid command

@@ -80,7 +80,14 @@ class McuProtocol(LineReceiver):
                   req = urllib2.Request(url, data)
                   response = urllib2.urlopen(req)
                   print(response.read())
-
+         elif command == 2:
+            print('Command was 2')
+            url = 'http://192.168.0.18:3000/api/data_value'
+            params = {'id': 1, 'address': address, 'value': value}
+            data = urllib.urlencode(params)
+            req = urllib2.Request(url, data)
+            response = urllib2.urlopen(req)
+            print(response.read())
          else:
             print('Command was something else')
          

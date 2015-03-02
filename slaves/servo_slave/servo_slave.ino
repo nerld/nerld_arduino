@@ -1,27 +1,17 @@
-// Wire Slave Receiver
-// by Nicholas Zambetti <http://www.zambetti.com>
-
-// Demonstrates use of the Wire library
-// Receives data as an I2C/TWI slave device
-// Refer to the "Wire Master Writer" example for use with this
-
-// Created 29 March 2006
-
-// This example code is in the public domain.
-
-
 #include <Wire.h>
 #include <Servo.h> 
  
 Servo myservo;
 int DEFAULT_ADDR = 99;
 int ADDR = NULL;
+int currentAngle = 0;
 int LED = 10;
 
 void setup()
 {
   Serial.begin(9600); 
   myservo.attach(9);  // attaches the servo on pin 9 to the servo object 
+  myservo.write(currentAngle); // reset the servo
 
   Wire.begin(DEFAULT_ADDR);
   Wire.onReceive(receiveEvent);
@@ -32,25 +22,10 @@ void setup()
    delay(100);
    TWAR = ADDR << 1;
    }
-//   
-//   byte setupArray[] = {1, 2, 3};
-//   
-//
-//    //send addr + func+type
-//   Wire.beginTransmission(1);
-//   Wire.write(setupArray, 3);
-//  
-   
- 
-
-  
- 
-  
 }
 
 void loop()
 {
-  
   delay(100);
 }
 
