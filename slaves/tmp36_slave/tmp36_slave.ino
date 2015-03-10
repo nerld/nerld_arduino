@@ -1,6 +1,7 @@
 // Wire Slave Receiver
 
 #include <Wire.h>
+#include "NerldProtocol.h"
 
 
 int DEFAULT_ADDR = 99;
@@ -24,7 +25,7 @@ void setup()
   Serial.println("Starting TMP36");
 
   Wire.begin(DEFAULT_ADDR);
-  Wire.onRequest(setDelay);
+  Wire.onReceive(setDelay);
   Wire.requestFrom(1,1);
   while (ADDR == NULL && Wire.available()) {
     ADDR = (Wire.read());
@@ -111,8 +112,19 @@ void measure() {
    
 }
 
-void setDelay() {
+void setDelay(int howMany) {
   Serial.print("set delay called");
+  char buffer[11];
+  int i = 0;
+  while(Wire.available() && i < 11)
+  {
+    char c = Wire.read();
+    buffer[i] = c;
+    i++;
+  }
+  Serial.println(buffer);
+  int val = atoi(buffer);
+  DELAY = val;
 }
 
 // function that executes whenever data is received from master

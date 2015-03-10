@@ -70,7 +70,7 @@ class McuProtocol(LineReceiver):
                      val = "0{0}".format(val)
                   if type < 10:
                      type = "0{0}".format(type)
-                  retVal = "{0}{1}{2}".format(addr, val, type)
+                  retVal = "{0}{1}{2}".format(type, addr, val)
                   self.transport.write(retVal)
                   
                   # set command on server to completed/sent

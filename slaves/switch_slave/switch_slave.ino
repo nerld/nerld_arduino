@@ -1,6 +1,8 @@
 // Wire Slave Receiver
-
+#include "NerldProtocol.h"
 #include <Wire.h>
+
+NerldProtocol nerldProtocol = NerldProtocol();
 
 int DEFAULT_ADDR = 99;
 int ADDR = NULL;
@@ -9,38 +11,28 @@ int LED = 10;
 
 void setup()
 {
+  Serial.println("INFO::setup: Initialising Switch Slave.");
   Serial.begin(9600); 
   pinMode(10, OUTPUT);
   digitalWrite(10, LOW);
 
   Wire.begin(DEFAULT_ADDR);
   Wire.onRequest(toggleSwitchRequest);
-  Wire.requestFrom(1,1);
-  while (ADDR == NULL && Wire.available()) {
-    ADDR = (Wire.read());
-    delay(100);
-    TWAR = ADDR << 1;
+  
+  while (ADDR == NULL) {
+    int newAddress = nerldProtocol.requestAddresssFromMaster();
+    ADDR = newAddress;
+    delay(1000);    
   }
-
-   //send addr + func+type
-  String command = "00";
-  String type = "0";
-  String address = "0";
-  if (ADDR < 10) {
-    address = address + ADDR;
-  } else {
-    address = "";
-    address = address + ADDR;
-  }
-  String commandString = command + address;
-  commandString = commandString  + type; 
-  Serial.println(commandString);
-  char buffer[6];
-  commandString.toCharArray(buffer, 6);
-  Serial.println(buffer);
-  Wire.beginTransmission(1);
-  Wire.write(buffer);
-  Wire.endTransmission();
+  
+  Serial.print("INFO::setup: Setting the slave address to ");
+  Serial.println(ADDR);
+  TWAR = ADDR << 1;
+  
+  Serial.println("INFO::setup: Registering the address with the master.");
+  nerldProtocol.sendCommandToMaster(ADDR, 0, 0);
+  Serial.println("INFO::setup: Successfully registered.");
+  Serial.println("INFO::setup: Switch Slave initialised.");
 }
 
 void loop()
@@ -61,7 +53,3 @@ void toggleSwitchRequest() {
 
    
 }
-
-// function that executes whenever data is received from master
-// this function is registered as an event, see setup()
-

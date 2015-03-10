@@ -6,8 +6,8 @@
 HardwareSerial *port;
 
 int NEXT_FREE_ADDR = 2;
-SwitchSlave switchSlaves[99];
-TMP36Slave tmp36Slaves[99];
+SwitchSlave switchSlaves[20];
+TMP36Slave tmp36Slaves[20];
 int slaveCount = 0;
 
 // COMMANDS
@@ -42,32 +42,40 @@ void requestCommandsFromServer() {
   sendCommandToServer(CHECK_FOR_COMMANDS, NULL, NULL);
   // receive commands from server
   while (port->available()){
-    char buffer[6];
+    char buffer[9];
     int i = 0;
-    while (port->available() && i < 6) {
+    while (port->available() && i < 9) {
       char inByte = port->read();
       buffer[i] = inByte;
       i++;
     }
 
-    char addrStr[3];
-    addrStr[0] = buffer[0];
-    addrStr[1] = buffer[1];
-    addrStr[2] = '\0';
-
-    char valStr[3];
-    valStr[0] = buffer[2];
-    valStr[1] = buffer[3];
-    valStr[2] = '\0';
-
     char typeStr[3];
-    typeStr[0] = buffer[4];
-    typeStr[1] = buffer[5];
+    typeStr[0] = buffer[0];
+    typeStr[1] = buffer[1];
     typeStr[2] = '\0';
+    
+    char addrStr[3];
+    addrStr[0] = buffer[2];
+    addrStr[1] = buffer[3];
+    addrStr[2] = '\0';
+    
+    char valStr[6];
+    valStr[0] = buffer[4];
+    valStr[1] = buffer[5];
+    valStr[2] = buffer[6];
+    valStr[3] = buffer[7];
+    valStr[4] = buffer[8];
+    valStr[5] = '\0';
 
     int addr = atoi(addrStr);
     int val = atoi(valStr);
     int type = atoi(typeStr);
+    
+    Serial.println(addr);
+    Serial.println(type);
+    Serial.println(val);
+    
     executeSlaveCommand(type, addr, val);
     delay(100);
   }
@@ -77,6 +85,9 @@ void executeSlaveCommand(int type, int addr, int val) {
   switch (type) {
     case 0:
       switchSlaves[addr].execute(val);
+      break;
+    case 3:
+      tmp36Slaves[addr].execute(val);
       break;
     default:
       break;
