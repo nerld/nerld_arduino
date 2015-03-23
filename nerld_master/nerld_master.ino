@@ -10,6 +10,7 @@ HardwareSerial *port;
 
 BaseSlave slaves[MAX_SLAVES];
 
+int ADDR = 1;
 int NEXT_FREE_ADDR = 2;
 int slaveCount = 0;
 
@@ -24,21 +25,41 @@ void setup()
   Serial.println("INFO::setup: Serial ports are up!");
 
   Serial.println("INFO::setup: Initialising I2C Mechanism...");
-  Wire.begin(1);
+  Wire.begin(ADDR);
   Wire.onRequest(nextAvaiableAddressRequest);
   Wire.onReceive(receiveCommand);
   Serial.println("INFO::setup: I2C successfully started.");
 }
 
 void loop()
-{    
-  delay(1000);
+{   
+  sendCommandToServer("testing");
+  delay(10000);
+}
+
+void healthChecker() {
+  Serial.println("INFO::healthChecker: Starting slave check...");
+  // do a health check on all slaves
+  for (int i = 0; i < MAX_SLAVES; i++) {
+    if (slaves[i].m_address != 0) {
+      Serial.println(slaves[i].m_address);
+      int response = Wire.requestFrom(slaves[i].m_address, 1);
+      if (response == 0) {
+       Serial.print("INFO::healthChecker: Slave at address ");
+       Serial.print(slaves[i].m_address);
+       Serial.println(" did not respond to health check. Removing...");
+       removeSlave(i);
+       delay(100);
+      }
+    }
+  }
+  Serial.println("INFO::healthChecker: Slave check complete.");
 }
 
 void nextAvaiableAddressRequest() { 
   Serial.println("INFO::nextAvaiableAddressRequest: Next slave address requested.");
 
-  int nextAddress =nextAvaiableAddress();
+  int nextAddress = nextAvaiableAddress();
 
   if (nextAddress >= MAX_SLAVES) {
     Serial.print("INFO::nextAvaiableAddressRequest: No slave address available.");
@@ -74,7 +95,7 @@ void executeCommand(int address, int command, String value) {
 
   switch (command) {
     case 0:
-      registerSlave(address);
+      registerSlave(address, value.toInt());
       break;
     case 1:
       removeSlave(address);
@@ -83,22 +104,29 @@ void executeCommand(int address, int command, String value) {
   }
 }
 
-void registerSlave(int address) {
+void registerSlave(int address, int type) {
   Serial.println("INFO:registerSlave: Registering Slave");
-  slaves[address] = BaseSlave(address);
+  slaves[address-2].m_address = address;
+  slaves[address-2].m_type = type;
+  slaveCount++;
   Serial.println("INFO:registerSlave: Slave Registered.");
 }
 
-void removeSlave(int address) {
+void removeSlave(int index) {
   Serial.println("INFO:removeSlave: Removing Slave");
-  slaves[address] = NULL;
+  slaves[index].m_address = 0;
+  slaveCount--;
 }
 
 int nextAvaiableAddress() {
   for (int i = 0; i < MAX_SLAVES; i++) {
-    if (slaves[i] == NULL) {
-      return i
+    if (slaves[i].m_address == 0) {
+      return i+2;
     }
   }
   return 99;
+}
+
+void sendCommandToServer(String command) {
+  port->println(command);
 }

@@ -12,11 +12,8 @@ void setup()
   Serial.println("INFO::setup: Initialising Basic Slave.");
   Serial.begin(9600); 
   
-  // pinMode(10, OUTPUT);
-  // digitalWrite(10, LOW);
-
   Wire.begin(DEFAULT_ADDR);
-  // Wire.onRequest(toggleSwitchRequest);
+  
   
   while (ADDR == NULL) {
     int newAddress = nerldProtocol.requestAddresssFromMaster();
@@ -28,6 +25,9 @@ void setup()
   Serial.println(ADDR);
   TWAR = ADDR << 1;
   
+  Wire.onRequest(healthCheck);
+  Wire.onReceive(receiveCommand);
+  
   Serial.println("INFO::setup: Registering the address with the master.");
   nerldProtocol.sendCommandToMaster(ADDR, 0, 0);
   Serial.println("INFO::setup: Successfully registered.");
@@ -36,7 +36,39 @@ void setup()
 
 void loop()
 {
-  delay(100);
+  delay(1000);
+}
+
+void healthCheck() {
+  Serial.println("INFO::healthCheck: Called.");
+  Wire.write("1");
+  Serial.println("INFO::healthCheck: Done.");
+}
+
+void receiveCommand(int numOfBytes) {
+  Serial.println("INFO::receiveCommand: Command received");
+  
+  int i = 0;
+  while(Wire.available() && i < numOfBytes)
+  {
+    char c = Wire.read();
+    Serial.println(c);
+    i++;
+  }
+}
+
+void executeCommand(int address, int command, String value) {
+  switch (command) {
+    case 0:
+      Serial.println("INFO::executeCommand: setPinMode called.");
+      break;
+    case 1:
+      Serial.println("INFO::executeCommand: digitalWritePin called.");
+      break;
+    default:
+      Serial.println("INFO::executeCommand: invalid command called.");
+      break; 
+  }
 }
 
 int setPinMode(int pin, String mode) {
