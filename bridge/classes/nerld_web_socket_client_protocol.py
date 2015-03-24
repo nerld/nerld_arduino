@@ -3,7 +3,6 @@ from autobahn.twisted.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory
 
 class NerldWebSocketClientProtocol(WebSocketClientProtocol):
-
   def onConnect(self, response):
     print("Server connected: {0}".format(response.peer))
 
@@ -26,3 +25,6 @@ class NerldWebSocketClientProtocol(WebSocketClientProtocol):
 
   def onClose(self, wasClean, code, reason):
     print("WebSocket connection closed: {0}".format(reason))
+
+  def setParent(self, parent):
+    self.parent = parent

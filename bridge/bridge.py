@@ -10,11 +10,15 @@ from classes.nerld_web_socket_client_protocol import NerldWebSocketClientProtoco
 top_service = service.MultiService()
 
 serialService = SerialService()
+serialService.setName('SerialService')
 serialService.setServiceParent(top_service)
+serialService.setParent(top_service)
 
 clientFactory = WebSocketClientFactory("ws://localhost:9000", debug=False)
-clientFactory.protocol = NerldWebSocketClientProtocol
+clientFactory.protocol = NerldWebSocketClientProtocol()
+clientFactory.protocol.setParent(top_service)
 client_service = internet.TCPClient("192.168.0.18", 9000, clientFactory)
+client_service.setName('ClientService')
 client_service.setServiceParent(top_service)
 
 # set the name of the application

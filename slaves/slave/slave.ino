@@ -9,8 +9,9 @@ int ADDR = NULL;
 
 void setup()
 {
-  Serial.println("INFO::setup: Initialising Basic Slave.");
   Serial.begin(9600); 
+  Serial.println("INFO::setup: Initialising Basic Slave.");
+
   
   Wire.begin(DEFAULT_ADDR);
   

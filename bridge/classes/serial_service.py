@@ -9,3 +9,6 @@ class SerialService(service.Service):
   def startService(self):
     serialProtocol = SerialProtocol(True)
     self.serial = SerialPort(serialProtocol, '/dev/ttyATH0', reactor, baudrate=9600)
+
+  def setParent(self, parent):
+    self.parent = parent
