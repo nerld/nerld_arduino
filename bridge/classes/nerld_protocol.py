@@ -9,7 +9,6 @@ class NerldProtocol:
     message = {'status': 'ok', 'rig_hash': 'remote1337'}
     try:
       message_args = msg.split(':')
-      message['from'] = 'rig'
       message['address'] = int(message_args[0])
       message['command'] = int(message_args[1])
       message['value'] = message_args[2]

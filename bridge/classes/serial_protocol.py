@@ -8,7 +8,7 @@ class SerialProtocol(LineReceiver):
   """
   MCU serial communication protocol.
   """
-  
+
   def __init__(self, parentService, debug = True):
     self.debug = debug
     self.parentService = parentService
@@ -29,7 +29,7 @@ class SerialProtocol(LineReceiver):
     if params['status'] != 'ok':
       print 'Invalid command was passed.'
     else:
-      # self.send_command_server(params)
+      self.publish_to_server('rails/remote1337', json.dumps(params).encode('utf8'))
       pass
     return
 

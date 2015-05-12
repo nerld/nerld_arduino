@@ -29,7 +29,7 @@ class MQTTListener(MQTTProtocol):
 
     def connackReceived(self, status):
         if status == 0:
-            self.subscribe("rigs/some_hash/#") # SUBSCRIBE TOPIC HERE
+            self.subscribe("rigs/remote1337/#") # SUBSCRIBE TOPIC HERE
         else:
             log.msg('Connecting to MQTT broker failed')
     
@@ -44,27 +44,28 @@ class MQTTListener(MQTTProtocol):
         # Received a publish on an output topic
         log.msg('RECV Topic: %s, Message: %s' % (topic, message ), logging.DEBUG)
         #mqttMessageBuffer.append((topic, message))
-
+        
         # parse the topic and call the appropriate thing here
         try:
             topic_path = topic.split('/')
 
-            if topic_path[2] == "slaves"
+            if topic_path[2] == "slaves":
                 address = topic_path[3]
                 command = topic_path[4]
                 value = message
                 encodedMessage = NerldProtocol.encode_message(address, command, value)
-                sendToMaster(encodeMessage)
-            elif topic_path[2] == "health"
+                self.sendToMaster(encodedMessage+'\t')
+            elif topic_path[2] == "health":
                 # call health checkup
                 pass
-        except:
-            pass
+        except Exception, e: 
+            log.err(str(e))
+            log.err('failed to parse')
 
         # use the sendToMaster function
 
     def sendToMaster(self, message):
-        self.factory.parentService.getServiceNamed('SerialService').serialProtocol.send_command_to_master(message)
+        self.factory.service.getServiceNamed('SerialService').serialProtocol.send_command_to_master(message)
 
 
 class MQTTListenerFactory(ReconnectingClientFactory):
