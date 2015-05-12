@@ -5,7 +5,7 @@ from twisted.internet import reactor
 
 from serial_protocol import SerialProtocol
 
-class SerialService(service.Service):
+class MQTTService(service.Service):
   
   def __init__(self, parentService):
     self.parentService = parentService
