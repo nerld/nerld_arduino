@@ -27,7 +27,7 @@ serialService.setServiceParent(top_service)
 # client_service.setServiceParent(top_service)
 
 mqttFactory = MQTTListenerFactory(top_service)
-mqtt_service = internet.TCPClient("192.168.0.4", 1883, mqttFactory)
+mqtt_service = internet.TCPClient("54.66.235.191", 1883, mqttFactory)
 mqtt_service.factory = mqttFactory
 mqtt_service.setName('MQTTService')
 mqtt_service.setServiceParent(top_service)
